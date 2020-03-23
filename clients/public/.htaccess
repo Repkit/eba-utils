@@ -1,0 +1,45 @@
+#Options +FollowSymlinks
+Options Indexes FollowSymLinks
+Require all granted
+
+RewriteEngine On
+
+<IfModule mod_alias.c>
+	#Alias /public-assets /uploads/files 
+</IfModule>
+
+#match any file that not contains api or index because we use rewrite in api.php and index.php
+<FilesMatch "([^(api|index)])\.php$">
+	Header set Connection keep-alive
+	Header add Access-Control-Allow-Origin "*"
+	Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type,x-hash,authorization"
+	#Header add Access-Control-Allow-Credentials  true
+</FilesMatch>
+
+
+# The following rule tells Apache that if the requested filename
+# exists, simply serve it.
+
+#RewriteCond %{REQUEST_URI} ^/uploads/files/(.*)$ 
+#RewriteRule ^(.*)$ public-assets/$1 [L] 
+
+#RewriteCond %{REQUEST_URI} ^/public-assets/(.*)$ 
+#RewriteRule ^(.*)$ uploads/files/$1 [L] 
+
+RewriteCond %{REQUEST_FILENAME} -s [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [NC,L]
+# The following rewrites all other queries to index.php. The 
+# condition ensures that if you are using Apache aliases to do
+# mass virtual hosting, the base path will be prepended to 
+# allow proper resolution of the index.php file; it will work
+# in non-aliased environments as well, providing a safe, one-size 
+# fits all solution.
+RewriteCond %{REQUEST_URI}::$1 ^(/.+)(.+)::\2$
+RewriteRule ^(.*) - [E=BASE:%1]
+RewriteRule ^(.*)$ %{ENV:BASE}index.php [NC,L]
+#SetEnv "APP_ENV" "production"
+
+
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
